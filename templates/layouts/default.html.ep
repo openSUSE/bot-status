@@ -1,0 +1,57 @@
+<!doctype html><html>
+  <head>
+    <title><%= title() || 'Bot Status' %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    %= asset 'app.css'
+    %= asset 'app.js'
+    %= content_for 'head'
+  </head>
+  <body>
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-light mb-3 border-bottom">
+      <div class="container">
+        %= link_to 'dashboard' => (class => 'navbar-brand') => begin
+          <i class="fas fa-robot"></i>
+        % end
+        <button class="navbar-toggler" type="button" data-toggle="collapse"
+          data-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false"
+          aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link"
+                href="<%= url_for('dashboard')->query(refresh => 5) %>">
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link"
+                href="<%= url_for('dashboard', format => 'json') %>"
+                target="_blank">
+                <i class="fas fa-code"></i>
+                JSON
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="container">
+      %= content
+    </div>
+    <footer class='footer'>
+      <div class='container'>
+        <div id='footer-legal' class="text-center">
+          BotStatus is maintained by
+          <a href="https://github.com/openSUSE/bot-status/issues">
+            Sebastian Riedel
+          </a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

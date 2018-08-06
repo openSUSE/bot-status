@@ -1,0 +1,45 @@
+% layout 'default';
+
+% content_for head => begin
+  % if (my $refresh = param 'refresh') {
+    <meta http-equiv="refresh" content="<%= $refresh %>">
+  % }
+  <script>
+    $(function () {
+      fromNow();
+    });
+</script>
+% end
+
+<h1>Bot Status</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <th>Comment</th>
+      <th>Updated</th>
+    </tr>
+  </thead>
+  <tbody>
+    % for my $bot (@$bots) {
+      <tr>
+        <td><%= $bot->{name} %></td>
+        <td>
+          % if ($bot->{status} eq 'ok') {
+            <i class="fas fa-check-circle" style="color:Green"></i>
+          % }
+          % elsif ($bot->{status} eq 'warning') {
+            <i class="fas fa-exclamation-circle" style="color:Orange"></i>
+          % }
+          % else {
+            <i class="fas fa-times-circle" style="color:Red"></i>
+          % }
+        </td>
+        <td><%= $bot->{comment} || '' %></td>
+        <td class="from-now"><%= $bot->{updated} %></td>
+      </tr> 
+    % }
+  </tbody>
+</table>

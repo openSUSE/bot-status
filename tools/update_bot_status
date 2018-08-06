@@ -1,0 +1,88 @@
+#!/usr/bin/env perl
+#
+# bot_status.pl: A stand-alone Perl script for sending status updates via
+#                RabbitMQ. Not that it requires the Perl module
+#                Mojo::RabbitMQ::Client, provided by the package
+#                perl-Mojo-RabbitMQ-Client.
+#
+# Copyright (c) 2018 SUSE LLC
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+use Mojo::Base -strict;
+
+use Mojo::IOLoop;
+use Mojo::RabbitMQ::Client;
+use Mojo::URL;
+use Mojo::Util qw(extract_usage getopt);
+
+Mojo::IOLoop->singleton->reactor->unsubscribe('error');
+
+getopt \@ARGV,
+  'c|comment=s' => \(my $comment),
+  'h|help'      => \my $help,
+  'm|meta=s'    => \my @meta,
+  'n|name=s'    => \(my $name),
+  'q|queue=s'   => \(my $queue),
+  's|status=s'  => \(my $status);
+die extract_usage if $help;
+die "Options --queue, --name and --status are required\n"
+  unless $queue && $name && $status;
+die qq{Option --status can only be "ok", "warning", "failed" or "gone"\n}
+  unless grep { $status eq $_ } qw(ok warning failed gone);
+
+my %meta = map { /^\s*([^:]+)\s*:\s*(.*+)$/ ? ($1, $2) : () } @meta;
+my $data = {name => $name, status => $status};
+$data->{comment} = $comment if $comment;
+$data->{meta}    = \%meta   if @meta;
+
+my $publisher = Mojo::RabbitMQ::Client->publisher(url => $queue);
+$publisher->publish_p($data, routing_key => 'suse.bot.status')
+  ->then(sub  { say 'Status updated' })
+  ->catch(sub { say "Updating status failed: $_[1]" })->wait;
+
+=encoding utf8
+
+=head1 NAME
+
+update_bot_status - Update Bot Status
+
+=head1 SYNOPSIS
+
+  Usage: update_bot_status [OPTIONS]
+
+    update_bot_status -q amqps://user:pass@server?exchange=pubsub -n test -s ok
+    update_bot_status -q amqps://... -n test -s ok -c 'Everything works'
+    update_bot_status -q amqps://... -n test -s warning -c 'Bot is burning'
+    update_bot_status -q amqps://... -n test -s failed -c 'Bot exploded'
+    update_bot_status -q amqps://... -n test -s gone
+
+  Options:
+    -c, --comment   Optional comment describing the current status
+    -h, --help      Show this message
+    -n, --name      Service name
+    -q, --queue     URL for RabbitMQ server
+    -s, --status    Current status ("ok", "warning", "failed" or "gone")
+
+=head1 DESCRIPTION
+
+Update the current status of release engineering bots. This script can be copied
+into projects that are unable to communicate with RabbitMQ on their own.
+
+=cut
