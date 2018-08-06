@@ -71,7 +71,7 @@ Warning with short description.
 
 Failure with additional meta data.
 
-    {"name":"rpmlint","status":"failed","meta":{"contact":"coolo@suse.de"}}
+    {"name":"rpmlint","status":"failed","meta":{"contact":"sriedel at suse dot de"}}
 
 Stop monitoring an obsolete service.
 
